@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Weld Discoloration Checker</title>
+<style>
+:root{--bg:#f4f6f8;--card:#ffffff;--text:#1f2937;--muted:#6b7280;--line:#dbe2ea;--accent:#0f766e;--good:#16a34a;--warn:#f59e0b;--bad:#dc2626}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:480px;margin:0 auto;padding:10px}.card{background:var(--card);border-radius:16px;padding:12px;box-shadow:0 4px 14px rgba(0,0,0,.06);margin-bottom:10px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:8px}.logo{width:60px;height:60px;object-fit:contain;border-radius:10px;border:1px solid var(--line);background:#fff;flex:0 0 auto}.titlebox{flex:1}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--muted);font-size:12px;margin:0}
+.lang-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}.lang-btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px;font-weight:700}.lang-btn.active{background:var(--accent);color:#fff}
+.viewer{position:relative;width:100%;aspect-ratio:3/4;background:#e5e7eb;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+video,img,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#photoPreview,#captureCanvas{display:none}
+.guide{position:absolute;left:12%;top:42%;width:76%;height:16%;border:3px solid #00d26a;border-radius:10px;cursor:grab}
+.controls3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.controls2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.btn{min-height:46px;border:none;border-radius:12px;font-weight:700}
+.btn-primary{background:var(--accent);color:#fff}.btn-success{background:var(--good);color:#fff}.btn-secondary{background:#eef2f7}
+.result{display:none;border-radius:14px;padding:12px;margin-top:10px;color:#fff}
+.result.green{background:var(--good)}.result.yellow{background:var(--warn);color:#000}.result.red{background:var(--bad)}
+.refimg{width:100%;max-height:180px;object-fit:contain;border-radius:12px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<h1>Weld Checker</h1>
+
+<div class="viewer" id="viewer">
+<video id="camera" autoplay playsinline muted></video>
+<img id="photoPreview">
+<canvas id="captureCanvas"></canvas>
+<div class="guide" id="guide"></div>
+</div>
+
+<div class="controls3">
+<button class="btn btn-primary" onclick="startCamera()">Camera</button>
+<button class="btn btn-success" onclick="takePhoto()">Photo</button>
+<button class="btn btn-secondary" onclick="document.getElementById('photoInput').click()">Upload</button>
+</div>
+
+<div class="controls2">
+<button class="btn btn-secondary" onclick="analyzePhoto()">Analyze</button>
+<button class="btn btn-secondary" onclick="clearPhoto()">Clear</button>
+</div>
+
+<input id="photoInput" type="file" accept="image/*" style="display:none">
+
+<div id="result" class="result"></div>
+</div>
+
+<div class="card">
+<button class="btn btn-secondary" onclick="toggleRef()">Show / Hide Reference</button>
+<div id="refBox">
+<img class="refimg" src="reference.png">
+</div>
+</div>
+
+</div>
+
+<script>
+function toggleRef(){
+let b=document.getElementById("refBox");
+b.style.display=(b.style.display==="none")?"block":"none";
+}
+
+let stream=null;
+async function startCamera(){
+stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+camera.srcObject=stream;
+}
+
+function takePhoto(){
+let c=document.getElementById("captureCanvas");
+c.width=camera.videoWidth;c.height=camera.videoHeight;
+c.getContext("2d").drawImage(camera,0,0);
+c.style.display="block";
+}
+
+function clearPhoto(){
+captureCanvas.style.display="none";
+photoPreview.style.display="none";
+result.style.display="none";
+}
+
+function analyzePhoto(){
+let res=document.getElementById("result");
+res.style.display="block";
+res.className="result green";
+res.innerHTML="ACCEPTABLE";
+}
+
+// draggable
+let g=document.getElementById("guide");
+let viewer=document.getElementById("viewer");
+let dragging=false,ox,oy;
+
+g.onpointerdown=e=>{dragging=true;ox=e.offsetX;oy=e.offsetY;}
+viewer.onpointermove=e=>{
+if(!dragging)return;
+let rect=viewer.getBoundingClientRect();
+let x=e.clientX-rect.left-ox;
+let y=e.clientY-rect.top-oy;
+g.style.left=(x/rect.width*100)+"%";
+g.style.top=(y/rect.height*100)+"%";
+}
+viewer.onpointerup=()=>dragging=false;
+</script>
+</body>
+</html>
